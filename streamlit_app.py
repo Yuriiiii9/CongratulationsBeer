@@ -23,7 +23,8 @@ st.header("📊 Power BI Dashboard (Coming Soon)")
 st.info("The Power BI dashboard iframe will be embedded here once the link is available.")
 
 # --- Load cleaned data path ---
-csv_path = "data/cleaned_sales.csv"  # Replace with your own CSV path if needed
+csv_url = st.secrets["PRIVATE_CSV_URL"]
+df = pd.read_csv(csv_url)
 
 # --- Set OpenAI API key from Streamlit secrets ---
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
@@ -53,7 +54,7 @@ if user_query:
 
 # --- Preview the cleaned data ---
 st.subheader("📋 Preview of Cleaned Sales Data")
-df = pd.read_csv(csv_path)
+df = pd.read_csv(csv_url)
 st.dataframe(df.head(20))
 
 # --- GitHub project link ---
