@@ -29,12 +29,18 @@ df = pd.read_csv(csv_url)
 # --- Set OpenAI API key from Streamlit secrets ---
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
-# --- Initialize LangChain CSV Agent ---
+# --- Initialize LangChain CSV Agent using in-memory file ---
+from langchain.agents import create_csv_agent
+from langchain.chat_models import ChatOpenAI
+
 @st.cache_resource
 def load_agent():
+    # Save df to a temporary file in memory so LangChain can access it
+    tmp_path = "/tmp/cleaned_sales.csv"
+    df.to_csv(tmp_path, index=False)
     return create_csv_agent(
         ChatOpenAI(temperature=0, model="gpt-4"),
-        csv_path,
+        tmp_path,
         verbose=False
     )
 
@@ -54,10 +60,8 @@ if user_query:
 
 # --- Preview the cleaned data ---
 st.subheader("📋 Preview of Cleaned Sales Data")
-df = pd.read_csv(csv_url)
 st.dataframe(df.head(20))
 
 # --- GitHub project link ---
 st.header("📂 Project Repository")
 st.markdown("[Click to view the GitHub repo](https://github.com/your_username/nonnybeer-dashboard)")
-
