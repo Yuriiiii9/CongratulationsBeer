@@ -30,17 +30,18 @@ df = pd.read_csv(csv_url)
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 # --- Initialize LangChain CSV Agent using in-memory file ---
-from langchain.agents import create_csv_agent
-from langchain.chat_models import ChatOpenAI
+from langchain_groq import ChatGroq
+from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
 
 @st.cache_resource
 def load_agent():
-    # Save df to a temporary file in memory so LangChain can access it
-    tmp_path = "/tmp/cleaned_sales.csv"
-    df.to_csv(tmp_path, index=False)
-    return create_csv_agent(
-        ChatOpenAI(temperature=0, model="gpt-3.5-turbo"),
-        tmp_path,
+    return create_pandas_dataframe_agent(
+        ChatGroq(
+            temperature=0,
+            model_name="llama3-8b-8192",  # also can choose "llama3-70b-8192"
+            groq_api_key=st.secrets["GROQ_API_KEY"]
+        ),
+        df,
         verbose=False
     )
 
