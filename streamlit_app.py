@@ -4,6 +4,8 @@ import os
 from langchain.agents import create_csv_agent
 from langchain.chat_models import ChatOpenAI
 
+st.write("Current loaded secrets keys:", list(st.secrets.keys()))
+
 # Page setup
 st.set_page_config(page_title="Nonny Beer Dashboard", layout="wide")
 
