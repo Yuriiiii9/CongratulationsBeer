@@ -30,6 +30,9 @@ df = pd.read_csv(csv_url)
 os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
 
 # --- Initialize LangChain CSV Agent using in-memory file ---
+from langchain_groq import ChatGroq
+from langchain_experimental.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
+
 @st.cache_resource
 def load_agent():
     return create_pandas_dataframe_agent(
