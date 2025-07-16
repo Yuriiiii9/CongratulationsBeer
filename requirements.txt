@@ -1,4 +1,4 @@
 streamlit
 pandas
 openai
-langchain
+langchain==0.0.310
