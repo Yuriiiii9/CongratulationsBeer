@@ -27,7 +27,7 @@ csv_url = st.secrets["PRIVATE_CSV_URL"]
 df = pd.read_csv(csv_url)
 
 # --- Set OpenAI API key from Streamlit secrets ---
-os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
 
 # --- Initialize LangChain CSV Agent using in-memory file ---
 @st.cache_resource
@@ -36,7 +36,7 @@ def load_agent():
         ChatGroq(
             temperature=0,
             model_name="llama3-8b-8192",  # also can choose "llama3-70b-8192"
-            groq_api_key=st.secrets["GROQ_API_KEY"]
+            groq_api_key=os.environ["GROQ_API_KEY"]
         ),
         df,
         verbose=False
