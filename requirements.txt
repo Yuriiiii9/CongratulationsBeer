@@ -1,7 +1,8 @@
 streamlit
 pandas
-langchain-groq
 groq
 langchain
+langchain-groq
+langchain-experimental
 langchain-community
 tabulate
