@@ -9,7 +9,8 @@ st.set_page_config(page_title="Nonny Beer Dashboard", layout="wide")
 
 # --- Password protection ---
 password = st.text_input("Enter access password:", type="password")
-if password != "nonny123":
+PASSWORD = st.secrets["APP_PASSWORD"]
+if password != PASSWORD:
     st.warning("Incorrect or missing password. Please contact admin for access.")
     st.stop()
 
