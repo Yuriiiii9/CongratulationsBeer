@@ -39,7 +39,7 @@ def load_agent():
     tmp_path = "/tmp/cleaned_sales.csv"
     df.to_csv(tmp_path, index=False)
     return create_csv_agent(
-        ChatOpenAI(temperature=0, model="gpt-4"),
+        ChatOpenAI(temperature=0, model="gpt-3.5-turbo"),
         tmp_path,
         verbose=False
     )
