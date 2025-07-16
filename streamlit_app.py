@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import os
-from langchain.agents import create_csv_agent
-from langchain.chat_models import ChatOpenAI
+from langchain_groq import ChatGroq
+from langchain_experimental.agents import create_csv_agent
 
 # Page setup
 st.set_page_config(page_title="Nonny Beer Dashboard", layout="wide")
@@ -30,9 +30,6 @@ df = pd.read_csv(csv_url)
 os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 # --- Initialize LangChain CSV Agent using in-memory file ---
-from langchain_groq import ChatGroq
-from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
-
 @st.cache_resource
 def load_agent():
     return create_pandas_dataframe_agent(
