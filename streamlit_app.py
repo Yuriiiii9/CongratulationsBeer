@@ -9,7 +9,8 @@ st.set_page_config(page_title="Nonny Beer Dashboard", layout="wide")
 
 # --- Password protection ---
 password = st.text_input("Enter access password:", type="password")
-PASSWORD = st.secrets["APP_PASSWORD"]
+PASSWORD = os.environ.get("APP_PASSWORD", "")
+
 if password != PASSWORD:
     st.warning("Incorrect or missing password. Please contact admin for access.")
     st.stop()
@@ -23,11 +24,11 @@ st.header("📊 Power BI Dashboard (Coming Soon)")
 st.info("The Power BI dashboard iframe will be embedded here once the link is available.")
 
 # --- Load cleaned data path ---
-csv_url = st.secrets["PRIVATE_CSV_URL"]
+csv_url = os.environ.get("PRIVATE_CSV_URL", "")
 df = pd.read_csv(csv_url)
 
 # --- Set OpenAI API key from Streamlit secrets ---
-os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+AI_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
 # --- Initialize LangChain CSV Agent using in-memory file ---
 from langchain_groq import ChatGroq
@@ -39,10 +40,11 @@ def load_agent():
         ChatGroq(
             temperature=0,
             model_name="llama3-8b-8192",  # also can choose "llama3-70b-8192"
-            groq_api_key=os.environ["GROQ_API_KEY"]
+            groq_api_key=AI_API_KEY,
         ),
         df,
-        verbose=False
+        verbose=False,
+        allow_dangerous_code=True
     )
 
 agent = load_agent()
