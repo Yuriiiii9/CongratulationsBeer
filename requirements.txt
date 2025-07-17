@@ -1,5 +1,6 @@
 streamlit
 pandas
+matplotlib
 groq
 langchain
 langchain-groq
