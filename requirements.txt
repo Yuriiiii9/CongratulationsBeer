@@ -6,3 +6,6 @@ langchain-groq
 langchain-experimental
 langchain-community
 tabulate
+python-dotenv
+google-auth
+google-api-python-client
