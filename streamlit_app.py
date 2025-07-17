@@ -27,6 +27,8 @@ st.info("The Power BI dashboard iframe will be embedded here once the link is av
 csv_url = os.environ.get("PRIVATE_CSV_URL", "")
 df = pd.read_csv(csv_url)
 
+print("📋 CSV Column name:", df.columns.tolist())
+
 # --- Set OpenAI API key from Streamlit secrets ---
 AI_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
@@ -49,6 +51,13 @@ def load_agent():
 
 agent = load_agent()
 
+# Prompt
+def ask_agent(user_input):
+    column_list_str = ", ".join(df.columns)
+    context = f"The dataset contains the following columns: {column_list_str}.\n"
+    full_prompt = context + user_input
+    return agent.invoke(full_prompt)
+
 # --- Real AI Q&A section ---
 st.header("🤖 Ask Questions About the Data (AI-Powered)")
 user_query = st.text_input("Ask a question about the sales data (e.g., Which SKU sold the most?)")
@@ -56,8 +65,8 @@ user_query = st.text_input("Ask a question about the sales data (e.g., Which SKU
 if user_query:
     with st.spinner("AI is processing your question..."):
         try:
-            response = agent.run(user_query)
-            st.success(response)
+            response = ask_agent(user_query)
+            st.write(response["output"])
         except Exception as e:
             st.error(f"Something went wrong: {e}")
 
