@@ -36,6 +36,8 @@ AI_API_KEY = os.environ.get("GROQ_API_KEY", "")
 from langchain_groq import ChatGroq
 from langchain_experimental.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
 
+st.cache_resource.clear()
+
 @st.cache_resource
 def load_agent():
     return create_pandas_dataframe_agent(
@@ -46,6 +48,7 @@ def load_agent():
         ),
         df,
         verbose=False,
+        handle_parsing_errors=True,
         allow_dangerous_code=True
     )
 
@@ -66,7 +69,9 @@ if user_query:
     with st.spinner("AI is processing your question..."):
         try:
             response = ask_agent(user_query)
-            st.write(response["output"])
+            st.write(response.get("output", "No output returned."))
+            if "retries" in response:
+                st.info(f"Agent retried {response['retries']} times.")
         except Exception as e:
             st.error(f"Something went wrong: {e}")
 
