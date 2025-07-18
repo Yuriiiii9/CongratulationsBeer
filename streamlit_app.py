@@ -400,8 +400,9 @@ with tab3:
                                 # Initialize GROQ with error handling
                                 llm = ChatGroq(
                                     groq_api_key=groq_api_key, 
-                                    model="llama-3.1-70b-versatile",
-                                    temperature=0.1
+                                    model="llama3-8b-8192",
+                                    temperature=0.1,
+                                    dangerous=True
                                 )
                                 
                                 # Simple approach: format data info and question
