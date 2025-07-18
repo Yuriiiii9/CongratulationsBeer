@@ -401,8 +401,7 @@ with tab3:
                                 llm = ChatGroq(
                                     groq_api_key=groq_api_key, 
                                     model="llama3-8b-8192",
-                                    temperature=0.1,
-                                    dangerous=True
+                                    temperature=0.1
                                 )
                                 
                                 # Simple approach: format data info and question
