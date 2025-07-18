@@ -227,7 +227,7 @@ with tab1:
     powerbi_iframe = """
     <iframe
         title="Nonny Beer Dashboard_new"
-        width="1140" 
+        width="1200" 
         height="541.25"
         src="https://app.powerbi.com/reportEmbed?reportId=bb9fc62e-298e-4d1f-8bad-4d11c1570431&autoAuth=true&ctid=92315d43-67d5-4613-9f3d-c3fb5114bf50"
         frameborder="0"
