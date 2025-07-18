@@ -1,5 +1,6 @@
 # streamlit_app.py
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
@@ -221,6 +222,19 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Dashboard", "📈 Analytics", "�
 # Tab 1: Dashboard
 with tab1:
     st.header("📊 Business Dashboard")
+
+    # Embed Power BI iframe at the top
+    powerbi_iframe = """
+    <iframe
+        title="Nonny Beer Dashboard_new"
+        width="1140" 
+        height="541.25"
+        src="https://app.powerbi.com/reportEmbed?reportId=bb9fc62e-298e-4d1f-8bad-4d11c1570431&autoAuth=true&ctid=92315d43-67d5-4613-9f3d-c3fb5114bf50"
+        frameborder="0"
+        allowFullScreen="true">
+    </iframe>
+    """
+    st.components.v1.html(powerbi_iframe, height=620)
     
     if st.session_state.processed_data is not None:
         df = st.session_state.processed_data
