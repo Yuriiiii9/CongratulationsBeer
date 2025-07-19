@@ -261,7 +261,6 @@ def clean_ollie_data(df):
     df = df.rename(columns={
         'Date': 'Date',
         'Buyer': 'Account Name',
-        'Customer Type': 'Account Category',
         'Address1': 'Address',
         'City': 'City',
         'State': 'Province',
@@ -802,3 +801,23 @@ def extract_year_month_from_filename(filename):
 
     month = month_map.get(month_str, None)
     return year, month
+
+def drop_total_rows(df):
+    """
+    Drop the final row if it appears to be a 'Total' summary row (e.g., entirely blank or starts with 'total').
+    """
+    if df.empty:
+        return df
+
+    last_row = df.iloc[-1]
+
+    # Drop if last row is fully null
+    if last_row.isnull().all():
+        return df.iloc[:-1]
+
+    # Drop if first cell contains the word 'total'
+    if isinstance(last_row.iloc[0], str) and 'total' in last_row.iloc[0].lower():
+        return df.iloc[:-1]
+
+    return df
+
