@@ -400,43 +400,40 @@ def clean_horizon_data(df):
 
     return df
 
-import pandas as pd
-import re
-import os
-import glob
-from io import BytesIO
-
-def merge_psc_sheets(file_path):
+def merge_psc_sheets(file_obj):
     """
-    Merge all PSC sheets with improved cleaning (cloud-compatible version).
-    This version expects a BytesIO object for cloud-based workflows.
+    Merge all PSC sheets from a BytesIO Excel file (cloud-compatible version).
+    This version matches Colab logic exactly but is adapted for in-memory stream input.
     """
+    import pandas as pd
+    import re
+    import os
+    import glob
+    from io import BytesIO
 
     try:
-        excel_file = pd.ExcelFile(file_path)
+        # Read all sheets from Excel, no header
+        excel_file = pd.ExcelFile(file_obj)
+        all_sheets = {name: pd.read_excel(excel_file, sheet_name=name, header=None) for name in excel_file.sheet_names}
     except Exception as e:
         print(f"❌ Error reading PSC file: {e}")
         return pd.DataFrame()
 
     merged_data = []
 
-    for sheet_name in excel_file.sheet_names:
-        df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
-
-        # Extract year and month from sheet name
-        year_month_match = re.search(r'(\d{4})[_\-\.]?(0?[1-9]|1[0-2])', sheet_name)
-        if not year_month_match:
+    for sheet_name, df in all_sheets.items():
+        year, month = extract_year_month_from_sheetname(sheet_name)
+        if year is None or month is None:
             print(f"⚠️ Skipping invalid sheet name: {sheet_name}")
             continue
-        year, month = int(year_month_match.group(1)), int(year_month_match.group(2))
 
-        # Set header, remove header/footer
+        # Set first row as header, remove header/footer rows
         df.columns = df.iloc[0]
         df = df[1:]
         df = df.iloc[:-2] if df.shape[0] > 2 else df
         df = df.loc[:, ~df.columns.astype(str).str.contains('^Unnamed', na=False)]
 
-        # Heuristically find customer column
+        # Heuristic detection of customer column
         col_names = df.columns.tolist()
         customer_col = None
         for col in col_names:
@@ -447,10 +444,10 @@ def merge_psc_sheets(file_path):
             customer_col = col_names[1]
         elif customer_col is None and len(col_names) > 0:
             customer_col = col_names[0]
+
         if customer_col:
             df.rename(columns={customer_col: "Customer"}, inplace=True)
 
-        # Clean customer column
         if "Customer" in df.columns:
             def clean_customer_value(x):
                 if pd.isna(x):
@@ -461,6 +458,7 @@ def merge_psc_sheets(file_path):
                 x_str = re.sub(r'\s*\n\s*', ' ', x_str).strip()
                 x_str = re.sub(r'\s+', ' ', x_str).strip()
                 return x_str if x_str else 'Unknown'
+
             df["Customer"] = df["Customer"].apply(clean_customer_value)
             print(f"✅ Sheet {sheet_name}: Cleaned Customer column values")
 
@@ -471,7 +469,7 @@ def merge_psc_sheets(file_path):
         df["Month"] = month
         df["Date"] = pd.to_datetime(dict(year=df["Year"], month=df["Month"], day=1))
 
-        # Standardize and rename known columns
+        # Rename known columns
         rename_dict = {
             "SKU#": "Sku", "QTY": "Quantity", "PROV": "Province",
             "SKU DESCRIPTION": "Sku Description", "SALES": "Sales", "Customer": "Account Name"
@@ -480,7 +478,6 @@ def merge_psc_sheets(file_path):
         df.drop(columns=["BROKER", "CODE", "BRAND", "UPC"], inplace=True, errors='ignore')
         df = df[(df["Quantity"] != 0) & (df["Sales"] != 0)]
 
-        # Account category
         def get_customer_type(name):
             name = str(name).lower()
             if any(k in name for k in ['restaurant', 'bar', 'cafe']):
@@ -493,7 +490,6 @@ def merge_psc_sheets(file_path):
                 return 'Other'
         df['Account Category'] = df['Account Name'].apply(get_customer_type)
 
-        # Product line
         def get_product_line(desc):
             desc = str(desc).lower()
             if 'pale' in desc:
@@ -508,18 +504,15 @@ def merge_psc_sheets(file_path):
                 return 'Other'
         df['Product Line'] = df['Sku Description'].apply(get_product_line)
 
-        # Packaging
         df[['Packs Per Case', 'Bottles Per Pack']] = df['Sku Description'].str.extract(r'(\d+)/(\d+)x', expand=True).astype(float)
         df['Total Bottles'] = df['Quantity'].astype(float) * df['Packs Per Case'] * df['Bottles Per Pack']
-
-        # Normalize column names
         df.columns = [str(col).strip().title() for col in df.columns]
+
         merged_data.append(df)
 
     if merged_data:
         result = pd.concat(merged_data, ignore_index=True)
         print(f"✅ Successfully merged {len(merged_data)} sheets with {len(result)} total rows")
-        import ace_tools as tools; tools.display_dataframe_to_user(name="Merged PSC Data", dataframe=result)
         return result
     else:
         print("⚠️ No valid PSC data found.")
