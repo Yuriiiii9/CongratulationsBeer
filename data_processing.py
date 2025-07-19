@@ -492,3 +492,104 @@ def generate_account_status(df):
     })
     
     return account_summary
+
+def load_clean_horizon_from_drive(folder_id):
+    """Download all CSV or Excel files from Horizon folder and clean"""
+    import io
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseDownload
+
+    creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+    creds = Credentials.from_service_account_info(creds_dict, scopes=["https://www.googleapis.com/auth/drive"])
+    service = build("drive", "v3", credentials=creds)
+
+    query = f"'{folder_id}' in parents and trashed = false and (mimeType='text/csv' or mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    files = results.get("files", [])
+
+    if not files:
+        raise ValueError("❌ No Horizon files found in the folder.")
+
+    df_list = []
+    for f in files:
+        file_id = f["id"]
+        request = service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+        fh.seek(0)
+        if f["name"].endswith(".csv"):
+            df = pd.read_csv(fh)
+        else:
+            df = pd.read_excel(fh)
+        df_list.append(df)
+
+    df_combined = pd.concat(df_list, ignore_index=True)
+    return clean_horizon_data(df_combined)
+
+def load_clean_psc_from_drive(folder_id):
+    """Download a single Excel file from PSC folder and merge sheets"""
+    import io
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseDownload
+
+    creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+    creds = Credentials.from_service_account_info(creds_dict, scopes=["https://www.googleapis.com/auth/drive"])
+    service = build("drive", "v3", credentials=creds)
+
+    query = f"'{folder_id}' in parents and mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' and trashed = false"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    files = results.get("files", [])
+
+    if not files:
+        raise ValueError("❌ No PSC Excel files found.")
+    if len(files) > 1:
+        raise ValueError("⚠️ Multiple PSC Excel files found. Only one expected.")
+
+    file_id = files[0]["id"]
+    request = service.files().get_media(fileId=file_id)
+    fh = io.BytesIO()
+    downloader = MediaIoBaseDownload(fh, request)
+    done = False
+    while not done:
+        _, done = downloader.next_chunk()
+    fh.seek(0)
+
+    return merge_psc_sheets(fh)
+
+def load_clean_ollie_from_drive(folder_id):
+    """Download all CSVs from Ollie folder and clean"""
+    import io
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseDownload
+
+    creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
+    creds = Credentials.from_service_account_info(creds_dict, scopes=["https://www.googleapis.com/auth/drive"])
+    service = build("drive", "v3", credentials=creds)
+
+    query = f"'{folder_id}' in parents and mimeType='text/csv' and trashed = false"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    files = results.get("files", [])
+
+    if not files:
+        raise ValueError("❌ No Ollie CSV files found in the folder.")
+
+    df_list = []
+    for f in files:
+        request = service.files().get_media(fileId=f["id"])
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+        fh.seek(0)
+        df = pd.read_csv(fh)
+        df_list.append(df)
+
+    df_combined = pd.concat(df_list, ignore_index=True)
+    return clean_ollie_data(df_combined)
