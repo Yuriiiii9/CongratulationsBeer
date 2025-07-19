@@ -277,6 +277,7 @@ def clean_ollie_data(df):
     df['Sales Channel Name'] = 'Ollie'
     df['Year'] = pd.to_datetime(df['Date']).dt.year
     df['Month'] = pd.to_datetime(df['Date']).dt.month
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     
     # Product line assignment
     df['Product Line'] = df['Sku Description'].apply(lambda x: 
@@ -287,133 +288,220 @@ def clean_ollie_data(df):
         'Other'
     )
     
-    # Add pack information
-    df['Packs Per Case'] = 6
-    df['Bottles Per Pack'] = 4
-    df['Total Bottles'] = df['Quantity'] * df['Packs Per Case'] * df['Bottles Per Pack']
+    # Map Customer Type to Account Category
+    customer_type_mapping = {
+        'LIC': 'Restaurant/Bar',
+        'GRC': 'Grocery',
+        'LRS': 'Retail Store',
+        'RAS': 'Rural Store',
+        'MOS': 'Manufacturer Channel',
+        'COU': 'Other'
+    }
+    df['Account Category'] = df['Customer Type'].map(customer_type_mapping)
+
+    # Extract Bottles per Pack
+    pack1 = df['Sku Description'].str.extract(r'(\d+)-pack', expand=False)
+    pack2 = df['Sku Description'].str.extract(r'/(\d+)\*', expand=False)
+    df['Bottles Per Pack'] = pack1.fillna(pack2).astype('float')
+
+    df['Packs Per Case'] = 6.0
+    df['Total Bottles'] = df['Quantity'] * df['Bottles Per Pack']
+
+    # Drop unused and zero rows
+    df = df.drop(columns=['Customer Type'])
+    df = df[(df["Quantity"] != 0) & (df["Sales"] != 0)]
+
+    # Standardize column names to title case
+    df.columns = [col.title() for col in df.columns]
     
     return df
 
 def clean_horizon_data(df):
-    """Clean Horizon distributor data"""
-    # Drop fully empty columns
-    df = df.dropna(axis=1, how='all')
-    
-    # Keep only selected columns
-    columns_to_keep = [
-        'Ship Date', 'Customer', 'Address', 'City', 'State', 'Zip',
-        'Product', 'SKU', 'Pack', 'Cases', 'Total'
-    ]
-    df = df[[col for col in columns_to_keep if col in df.columns]]
-    
-    # Rename columns
-    df = df.rename(columns={
-        'Ship Date': 'Date',
-        'Customer': 'Account Name',
-        'Address': 'Address',
-        'City': 'City',
-        'State': 'Province',
-        'Zip': 'Postal Code',
-        'Product': 'Sku Description',
-        'SKU': 'Sku',
-        'Cases': 'Quantity',
-        'Total': 'Sales'
-    })
-    
-    # Add missing columns
-    df['Sales Channel Category'] = 'Distributor'
+    """
+    Clean combined Horizon sales data from Drive.
+    Applies column standardization, metadata extraction, and derived features.
+    """
+    import re
+
+    # --- Drop total summary row, if present ---
+    df = df.dropna(axis=1, how="all")
+    df = drop_total_rows(df)
+
+    # --- Drop blank Account Name rows ---
+    df['Account Name'] = df['Account Name'].astype(str).str.strip()
+    df = df[df['Account Name'].notna() & (df['Account Name'] != '')]
+    df = df[~df['Account Name'].str.lower().isin(['nan'])]
+
+    # --- Standardize column names ---
+    df.columns = [col.title() for col in df.columns]
+
+    # --- Extract year and month from filename ---
+    df['Year'], df['Month'] = zip(*df['File Name'].map(extract_year_month_from_filename))
+
+    # --- Construct Date ---
+    df['Date'] = pd.to_datetime(df[['Year', 'Month']].assign(DAY=1))
+
+    # --- Filter out zero sales/quantity ---
+    df = df[(df["Quantity"] != 0) & (df["Sales"] != 0)]
+
+    # --- Add Sales Channel ---
+    df['Sales Channel Category'] = "Distributor"
     df['Sales Channel Name'] = 'Horizon'
-    df['Year'] = pd.to_datetime(df['Date']).dt.year
-    df['Month'] = pd.to_datetime(df['Date']).dt.month
-    df['Account Category'] = 'Groceries'
-    
-    # Extract pack information
-    df[['Packs Per Case', 'Bottles Per Pack']] = df['Pack'].str.extract(r'(\d+)/(\d+)', expand=True).fillna(0).astype(float)
-    df.loc[df['Packs Per Case'] == 0, 'Packs Per Case'] = 6
-    df.loc[df['Bottles Per Pack'] == 0, 'Bottles Per Pack'] = 4
-    
-    # Product line assignment
-    df['Product Line'] = df['Sku Description'].apply(lambda x: 
-        'Pale Ale' if 'pale' in str(x).lower() else
-        'Pilsner' if 'pilsner' in str(x).lower() else
-        'IPA' if 'ipa' in str(x).lower() else
-        'Dark Lager' if 'lager' in str(x).lower() else
-        'Other'
-    )
-    
+
+    # --- Add Customer Category ---
+    def get_customer_type(name):
+        name = str(name).lower()
+        if any(k in name for k in ['restaurant', 'bar', 'cafe']):
+            return 'Restaurant/Bar'
+        elif any(k in name for k in ['grocery', 'market']):
+            return 'Grocery'
+        elif any(k in name for k in ['liquor', 'store', 'shop']):
+            return 'Retail Store'
+        else:
+            return 'Other'
+    df['Account Category'] = df['Account Name'].apply(get_customer_type)
+
+    # --- Add Product Line ---
+    def get_product_line(desc):
+        desc = str(desc).lower()
+        if 'pale' in desc:
+            return 'Pale Ale'
+        elif 'pilsner' in desc:
+            return 'Pilsner'
+        elif 'ipa' in desc:
+            return 'IPA'
+        elif 'lager' in desc:
+            return 'Dark Lager'
+        else:
+            return 'Other'
+    df['Product Line'] = df['Sku Description'].apply(get_product_line)
+
+    # --- Add Bottles Per Pack and Total Bottles ---
+    df[['Packs Per Case', 'Bottles Per Pack']] = df['Sku Description'].str.extract(r'(\d+)/(\d+)x', expand=True).astype(float)
     df['Total Bottles'] = df['Quantity'] * df['Packs Per Case'] * df['Bottles Per Pack']
-    
+
     return df
 
+import pandas as pd
+import re
+import os
+import glob
+from io import BytesIO
+
 def merge_psc_sheets(file_path):
-    """Merge all PSC sheets with improved cleaning"""
+    """
+    Merge all PSC sheets with improved cleaning (cloud-compatible version).
+    This version expects a BytesIO object for cloud-based workflows.
+    """
+
     try:
         excel_file = pd.ExcelFile(file_path)
     except Exception as e:
-        st.error(f"Error reading PSC file: {e}")
+        print(f"❌ Error reading PSC file: {e}")
         return pd.DataFrame()
-    
+
     merged_data = []
-    
+
     for sheet_name in excel_file.sheet_names:
-        if sheet_name == 'YTD':
+        df = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
+
+        # Extract year and month from sheet name
+        year_month_match = re.search(r'(\d{4})[_\-\.]?(0?[1-9]|1[0-2])', sheet_name)
+        if not year_month_match:
+            print(f"⚠️ Skipping invalid sheet name: {sheet_name}")
             continue
-            
-        df = pd.read_excel(excel_file, sheet_name=sheet_name)
-        
-        # Clean Customer column
-        if 'Customer' in df.columns:
-            df['Customer'] = df['Customer'].fillna('')
-            # Remove pattern like ^A^B^C
-            df['Customer'] = df['Customer'].apply(lambda x: re.sub(r'\^[A-Z](\^[A-Z])*', '', str(x)))
-            df = df[df['Customer'].str.strip() != '']
+        year, month = int(year_month_match.group(1)), int(year_month_match.group(2))
+
+        # Set header, remove header/footer
+        df.columns = df.iloc[0]
+        df = df[1:]
+        df = df.iloc[:-2] if df.shape[0] > 2 else df
+        df = df.loc[:, ~df.columns.astype(str).str.contains('^Unnamed', na=False)]
+
+        # Heuristically find customer column
+        col_names = df.columns.tolist()
+        customer_col = None
+        for col in col_names:
+            if 'customer' in str(col).lower():
+                customer_col = col
+                break
+        if customer_col is None and len(col_names) > 1:
+            customer_col = col_names[1]
+        elif customer_col is None and len(col_names) > 0:
+            customer_col = col_names[0]
+        if customer_col:
+            df.rename(columns={customer_col: "Customer"}, inplace=True)
+
+        # Clean customer column
+        if "Customer" in df.columns:
+            def clean_customer_value(x):
+                if pd.isna(x):
+                    return 'Unknown'
+                x_str = str(x)
+                x_str = re.sub(r'\d{2}/\d{2}/\d{4}\s*-\s*\d{2}/\d{2}/\d{4}', '', x_str)
+                x_str = re.sub(r'\d{2}/\d{2}/\d{4}', '', x_str)
+                x_str = re.sub(r'\s*\n\s*', ' ', x_str).strip()
+                x_str = re.sub(r'\s+', ' ', x_str).strip()
+                return x_str if x_str else 'Unknown'
+            df["Customer"] = df["Customer"].apply(clean_customer_value)
             print(f"✅ Sheet {sheet_name}: Cleaned Customer column values")
-        
-        # Standard column renaming
-        df = df.rename(columns={
-            'Date Sold': 'Date',
-            'Customer': 'Account Name',
-            'Address 1': 'Address',
-            'City': 'City', 
-            'State': 'Province',
-            'Zip': 'Postal Code',
-            'Item': 'Sku',
-            'Item Description': 'Sku Description',
-            'Cases': 'Quantity',
-            'Amount': 'Sales'
-        })
-        
+
         # Add metadata
-        df['Sales Channel Category'] = 'Distributor'
+        df['Sales Channel Category'] = "Distributor"
         df['Sales Channel Name'] = 'PSC'
-        df['Year'] = pd.to_datetime(df['Date']).dt.year
-        df['Month'] = pd.to_datetime(df['Date']).dt.month
-        df['Account Category'] = 'Groceries'
-        
-        # Product line assignment
-        df['Product Line'] = df['Sku Description'].apply(lambda x: 
-            'Pale Ale' if 'pale' in str(x).lower() else
-            'Pilsner' if 'pilsner' in str(x).lower() else
-            'IPA' if 'ipa' in str(x).lower() else
-            'Dark Lager' if 'lager' in str(x).lower() else
-            'Other'
-        )
-        
-        # Extract pack information from Item Description
+        df["Year"] = year
+        df["Month"] = month
+        df["Date"] = pd.to_datetime(dict(year=df["Year"], month=df["Month"], day=1))
+
+        # Standardize and rename known columns
+        rename_dict = {
+            "SKU#": "Sku", "QTY": "Quantity", "PROV": "Province",
+            "SKU DESCRIPTION": "Sku Description", "SALES": "Sales", "Customer": "Account Name"
+        }
+        df.rename(columns={col: rename_dict.get(col, col) for col in df.columns}, inplace=True)
+        df.drop(columns=["BROKER", "CODE", "BRAND", "UPC"], inplace=True, errors='ignore')
+        df = df[(df["Quantity"] != 0) & (df["Sales"] != 0)]
+
+        # Account category
+        def get_customer_type(name):
+            name = str(name).lower()
+            if any(k in name for k in ['restaurant', 'bar', 'cafe']):
+                return 'Restaurant/Bar'
+            elif any(k in name for k in ['grocery', 'market', 'grocer']):
+                return 'Grocery'
+            elif any(k in name for k in ['liquor', 'store', 'shop']):
+                return 'Retail Store'
+            else:
+                return 'Other'
+        df['Account Category'] = df['Account Name'].apply(get_customer_type)
+
+        # Product line
+        def get_product_line(desc):
+            desc = str(desc).lower()
+            if 'pale' in desc:
+                return 'Pale Ale'
+            elif 'pilsner' in desc:
+                return 'Pilsner'
+            elif 'ipa' in desc:
+                return 'IPA'
+            elif 'lager' in desc:
+                return 'Dark Lager'
+            else:
+                return 'Other'
+        df['Product Line'] = df['Sku Description'].apply(get_product_line)
+
+        # Packaging
         df[['Packs Per Case', 'Bottles Per Pack']] = df['Sku Description'].str.extract(r'(\d+)/(\d+)x', expand=True).astype(float)
-        
-        # Calculate Total Bottles
         df['Total Bottles'] = df['Quantity'].astype(float) * df['Packs Per Case'] * df['Bottles Per Pack']
-        
-        # Capitalize columns
+
+        # Normalize column names
         df.columns = [str(col).strip().title() for col in df.columns]
-        
-        print(f"Sheet {sheet_name} columns: {list(df.columns)}")
         merged_data.append(df)
-    
+
     if merged_data:
         result = pd.concat(merged_data, ignore_index=True)
         print(f"✅ Successfully merged {len(merged_data)} sheets with {len(result)} total rows")
+        import ace_tools as tools; tools.display_dataframe_to_user(name="Merged PSC Data", dataframe=result)
         return result
     else:
         print("⚠️ No valid PSC data found.")
@@ -495,17 +583,26 @@ def generate_account_status(df):
     
     return account_summary
 
-def load_clean_horizon_from_drive(folder_id):
-    """Download all CSV or Excel files from Horizon folder and clean"""
+def load_horizon_from_drive(folder_id):
+    """
+    Download all Horizon distributor sales reports from a Google Drive folder (via service account),
+    extract year and month from filenames, and return a cleaned, enriched DataFrame.
+    """
     import io
+    import os
+    import json
+    import pandas as pd
+    import re
     from google.oauth2.service_account import Credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaIoBaseDownload
 
+    # Load Google Drive service account credentials from environment variable
     creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
     creds = Credentials.from_service_account_info(creds_dict, scopes=["https://www.googleapis.com/auth/drive"])
     service = build("drive", "v3", credentials=creds)
 
+    # Query all .csv or .xlsx files inside the specified folder
     query = f"'{folder_id}' in parents and trashed = false and (mimeType='text/csv' or mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')"
     results = service.files().list(q=query, fields="files(id, name)").execute()
     files = results.get("files", [])
@@ -514,8 +611,13 @@ def load_clean_horizon_from_drive(folder_id):
         raise ValueError("❌ No Horizon files found in the folder.")
 
     df_list = []
+
+    # Loop through each file and download + parse
     for f in files:
         file_id = f["id"]
+        file_name = f["name"]
+
+        # Download file content into memory
         request = service.files().get_media(fileId=file_id)
         fh = io.BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
@@ -523,26 +625,56 @@ def load_clean_horizon_from_drive(folder_id):
         while not done:
             _, done = downloader.next_chunk()
         fh.seek(0)
-        if f["name"].endswith(".csv"):
-            df = pd.read_csv(fh)
-        else:
-            df = pd.read_excel(fh)
-        df_list.append(df)
 
+        # Read as DataFrame
+        try:
+            if file_name.endswith(".csv"):
+                df = pd.read_csv(fh)
+            else:
+                df = pd.read_excel(fh, header=2)  # Skip first 2 header rows (if applicable)
+
+            df["File Name"] = file_name
+            df_list.append(df)
+
+        except Exception as e:
+            print(f"❌ Failed to read {file_name}, error: {e}")
+
+    if not df_list:
+        raise ValueError("❌ No readable files found.")
+
+    # Combine all monthly files into a single DataFrame
     df_combined = pd.concat(df_list, ignore_index=True)
+
+    # Extract Year and Month from filename using your utility function
+    df_combined["Year"], df_combined["Month"] = zip(*df_combined["File Name"].map(extract_year_month_from_filename))
+
+    # Construct a full datetime object as the first day of the month
+    df_combined["Date"] = pd.to_datetime(df_combined[["Year", "Month"]].assign(DAY=1))
+
+    # Clean and enrich the merged data using your centralized cleaning logic
     return clean_horizon_data(df_combined)
 
 def load_clean_psc_from_drive(folder_id):
-    """Download a single Excel file from PSC folder and merge sheets"""
+    """
+    Download a single Excel file from the PSC folder in Google Drive,
+    extract year/month from sheet name, merge all sheets, and return cleaned DataFrame.
+    """
     import io
+    import json
+    import re
+    import pandas as pd
     from google.oauth2.service_account import Credentials
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaIoBaseDownload
 
+    # Load credentials from environment variable
     creds_dict = json.loads(os.environ["GOOGLE_CREDENTIALS"])
-    creds = Credentials.from_service_account_info(creds_dict, scopes=["https://www.googleapis.com/auth/drive"])
+    creds = Credentials.from_service_account_info(
+        creds_dict, scopes=["https://www.googleapis.com/auth/drive"]
+    )
     service = build("drive", "v3", credentials=creds)
 
+    # Query PSC Excel files in the folder
     query = f"'{folder_id}' in parents and mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' and trashed = false"
     results = service.files().list(q=query, fields="files(id, name)").execute()
     files = results.get("files", [])
@@ -552,7 +684,9 @@ def load_clean_psc_from_drive(folder_id):
     if len(files) > 1:
         raise ValueError("⚠️ Multiple PSC Excel files found. Only one expected.")
 
+    # Download the file content into memory
     file_id = files[0]["id"]
+    file_name = files[0]["name"]
     request = service.files().get_media(fileId=file_id)
     fh = io.BytesIO()
     downloader = MediaIoBaseDownload(fh, request)
@@ -561,7 +695,23 @@ def load_clean_psc_from_drive(folder_id):
         _, done = downloader.next_chunk()
     fh.seek(0)
 
-    return merge_psc_sheets(fh)
+    # 🔽 Extract year/month from each sheet name
+    xl = pd.ExcelFile(fh)
+    sheet_info = []
+    for sheet_name in xl.sheet_names:
+        year, month = extract_year_month_from_sheetname(sheet_name)
+        if year is not None and month is not None:
+            sheet_info.append((sheet_name, year, month))
+
+    # Optional: use sheet_info to log or tag DataFrame later
+    # print(sheet_info)  # or store them for downstream logic
+
+    # ✅ Merge all cleaned sheets and return DataFrame
+    fh.seek(0)  # reset pointer again in case merge_psc_sheets needs to re-read
+    df_cleaned = merge_psc_sheets(fh)
+
+    return df_cleaned
+
 
 def load_clean_ollie_from_drive(folder_id):
     """Download all CSVs from Ollie folder and clean"""
@@ -595,3 +745,60 @@ def load_clean_ollie_from_drive(folder_id):
 
     df_combined = pd.concat(df_list, ignore_index=True)
     return clean_ollie_data(df_combined)
+
+def extract_year_month_from_sheetname(sheet_name):
+    match = re.search(r'([A-Za-z]+)\s+(20\d{2})', sheet_name)
+    if not match:
+        return None, None
+    month_str = match.group(1).lower()
+    year = int(match.group(2))
+
+    month_map = {
+        'jan': 1, 'january': 1, 'feb': 2, 'february': 2, 'mar': 3, 'march': 3,
+        'apr': 4, 'april': 4, 'may': 5, 'jun': 6, 'june': 6, 'jul': 7, 'july': 7,
+        'aug': 8, 'august': 8, 'sep': 9, 'sept': 9, 'september': 9,
+        'oct': 10, 'october': 10, 'nov': 11, 'november': 11, 'dec': 12, 'december': 12
+    }
+
+    month = month_map.get(month_str)
+    return year, month
+
+
+def extract_year_month_from_filename(filename):
+    """
+    Extract year and month from filename. Supports both full and abbreviated month names, with or without a period.
+    """
+    # Extract 4-digit year
+    year_match = re.search(r'(20\d{2})', filename)
+
+    # Extract month name (e.g., Jan, Jan., January, etc.)
+    month_match = re.search(
+        r'(Jan\.?|Feb\.?|Mar\.?|Apr\.?|May\.?|Jun\.?|Jul\.?|Aug\.?|Sep\.?|Sept\.?|Oct\.?|Nov\.?|Dec\.?|'
+        r'January|February|March|April|May|June|July|August|September|October|November|December)',
+        filename, re.IGNORECASE
+    )
+
+    if not year_match or not month_match:
+        return None, None
+
+    year = int(year_match.group(1))
+    month_str = month_match.group(1).lower().rstrip('.')  # Normalize month string
+
+    # Map month name to month number
+    month_map = {
+        'jan': 1, 'january': 1,
+        'feb': 2, 'february': 2,
+        'mar': 3, 'march': 3,
+        'apr': 4, 'april': 4,
+        'may': 5,
+        'jun': 6, 'june': 6,
+        'jul': 7, 'july': 7,
+        'aug': 8, 'august': 8,
+        'sep': 9, 'sept': 9, 'september': 9,
+        'oct': 10, 'october': 10,
+        'nov': 11, 'november': 11,
+        'dec': 12, 'december': 12
+    }
+
+    month = month_map.get(month_str, None)
+    return year, month
