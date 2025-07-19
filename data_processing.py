@@ -45,17 +45,24 @@ def authenticate_google_drive():
     return None
 
 
-def upload_to_drive(service, filename, filepath):
-    """Upload file to Google Drive"""
-    file_metadata = {'name': filename}
-    media = MediaFileUpload(filepath, resumable=True)
-    
+def upload_to_drive(service, local_file, gdrive_filename, folder_id=None):
+    from googleapiclient.http import MediaFileUpload
+
+    file_metadata = {'name': Combined_Sales_Data}
+    if folder_id:
+        file_metadata['parents'] = [folder_id]
+
+    media = MediaFileUpload(local_file, mimetype='text/csv')
+
     try:
-        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        return file.get('id')
+        service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id'
+        ).execute()
+        print(f"✅ Uploaded {gdrive_filename} to Drive successfully.")
     except Exception as e:
-        st.error(f"Error uploading to Drive: {e}")
-        return None
+        print(f"❌ Failed to upload {gdrive_filename} to Drive: {e}")
 
 def shopify_get(endpoint: str, params: dict):
     """Make GET request to Shopify API"""
