@@ -48,7 +48,7 @@ def authenticate_google_drive():
 def upload_to_drive(service, local_file, gdrive_filename, folder_id=None):
     from googleapiclient.http import MediaFileUpload
 
-    file_metadata = {'name': Combined_Sales_Data}
+    file_metadata = {'name': gdrive_filename}
     if folder_id:
         file_metadata['parents'] = [folder_id]
 
