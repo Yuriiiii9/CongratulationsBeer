@@ -553,6 +553,10 @@ def process_all_data(uploaded_files):
     
     if all_data:
         combined_df = pd.concat(all_data, ignore_index=True)
+        
+        if 'File Name' in combined_df.columns:
+            combined_df.drop(columns=['File Name'], inplace=True)
+        
         return combined_df
     else:
         return pd.DataFrame()
