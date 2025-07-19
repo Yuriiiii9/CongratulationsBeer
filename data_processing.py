@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import streamlit as st
 from google.auth.transport.requests import Request
+from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -29,19 +30,20 @@ SHOPIFY_TOKEN = os.environ.get("SHOPIFY_TOKEN")
 HEADERS = {"X-Shopify-Access-Token": SHOPIFY_TOKEN}
 
 def authenticate_google_drive():
-    """Authenticate and return Google Drive service"""
+    """Authenticate and return Google Drive service using a service account"""
     try:
         if 'GOOGLE_CREDENTIALS' in os.environ:
-            import json
             creds_data = json.loads(os.environ['GOOGLE_CREDENTIALS'])
-            creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
-            if creds and creds.valid:
-                return build('drive', 'v3', credentials=creds)
+            creds = service_account.Credentials.from_service_account_info(
+                creds_data, scopes=SCOPES
+            )
+            return build('drive', 'v3', credentials=creds)
     except Exception as e:
         st.warning(f"Google Drive authentication failed: {e}")
     
     st.warning("Google Drive upload not available. Set GOOGLE_CREDENTIALS environment variable.")
     return None
+
 
 def upload_to_drive(service, filename, filepath):
     """Upload file to Google Drive"""
