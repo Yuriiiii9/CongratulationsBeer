@@ -149,13 +149,13 @@ with st.sidebar:
                         # Save combined data
                         combined_filename = f'combined_sales_data_{timestamp}.csv'
                         combined_df.to_csv(combined_filename, index=False)
-                        upload_to_drive(service, combined_filename, combined_filename, fold_id=UPLOAD_TARGET_FOLDER_ID)
+                        upload_to_drive(service, combined_filename, combined_filename, folder_id=UPLOAD_TARGET_FOLDER_ID)
                         os.remove(combined_filename)
                         
                         # Save account status
                         status_filename = f'account_status_{timestamp}.csv'
                         st.session_state.account_status.to_csv(status_filename, index=False)
-                        upload_to_drive(service, status_filename, status_filename, fold_id=UPLOAD_TARGET_FOLDER_ID)
+                        upload_to_drive(service, status_filename, status_filename, folder_id=UPLOAD_TARGET_FOLDER_ID)
                         os.remove(status_filename)
                     
                     # Update processing history
