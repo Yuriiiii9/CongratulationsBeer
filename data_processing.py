@@ -583,7 +583,7 @@ def generate_account_status(df):
     
     return account_summary
 
-def load_horizon_from_drive(folder_id):
+def load_clean_horizon_from_drive(folder_id):
     """
     Download all Horizon distributor sales reports from a Google Drive folder (via service account),
     extract year and month from filenames, and return a cleaned, enriched DataFrame.
