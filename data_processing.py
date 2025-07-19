@@ -322,6 +322,18 @@ def clean_horizon_data(df):
     """
     import re
 
+    # Drop unnecessary columns (only if they exist)
+    columns_to_drop = ['CODE','BRAND','STATUS','SALES CHANGE','MCB%','YTD SALES','UPC','YTD SALES CHANGE','YTD MCB%']
+    df = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
+
+    # Rename columns (if applicable)
+    rename_dict = {
+        'CUSTOMER': 'Account Name',
+        'SKU#': 'SKU',
+        'POSTAL': 'POSTAL CODE'
+    }
+    df = df.rename(columns=rename_dict)
+
     # --- Drop total summary row, if present ---
     df = df.dropna(axis=1, how="all")
     df = drop_total_rows(df)
