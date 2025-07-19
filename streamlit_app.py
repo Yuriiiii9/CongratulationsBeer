@@ -142,18 +142,20 @@ with st.sidebar:
                     # Save to Drive
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     service = authenticate_google_drive()
+
+                    UPLOAD_TARGET_FOLDER_ID = os.environ.get("UPLOAD_FOLDER_ID")
                     
                     if service:
                         # Save combined data
                         combined_filename = f'combined_sales_data_{timestamp}.csv'
                         combined_df.to_csv(combined_filename, index=False)
-                        upload_to_drive(service, combined_filename, combined_filename)
+                        upload_to_drive(service, combined_filename, combined_filename, fold_id=UPLOAD_TARGET_FOLDER_ID)
                         os.remove(combined_filename)
                         
                         # Save account status
                         status_filename = f'account_status_{timestamp}.csv'
                         st.session_state.account_status.to_csv(status_filename, index=False)
-                        upload_to_drive(service, status_filename, status_filename)
+                        upload_to_drive(service, status_filename, status_filename, fold_id=UPLOAD_TARGET_FOLDER_ID)
                         os.remove(status_filename)
                     
                     # Update processing history
