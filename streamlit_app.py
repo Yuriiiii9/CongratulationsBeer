@@ -104,32 +104,23 @@ with st.sidebar:
                 }
                 
                 # Process each distributor folder
-                for dist_name, folder_path in folders.items():
-                    if os.path.exists(folder_path):
-                        files = [f for f in os.listdir(folder_path) 
-                                if f.endswith(('.csv', '.xlsx', '.xls'))]
+                for dist_name, folder_id in folders.items():
+                    try:
+                        if dist_name == 'Horizon':
+                            df = load_clean_horizon_from_drive(folder_id)
+                        elif dist_name == 'PSC':
+                            df = load_clean_psc_from_drive(folder_id)
+                        elif dist_name == 'Ollie':
+                            df = load_clean_ollie_from_drive(folder_id)
+                        else:
+                            continue
+                
+                        if not df.empty:
+                            all_data.append(df)
+                            processed_files.append(f"{dist_name}: {df.shape[0]} rows")
+                    except Exception as e:
+                        st.warning(f"Error processing {dist_name}: {e}")
                         
-                        for file_name in files:
-                            if file_name not in st.session_state.last_processed_files:
-                                file_path = os.path.join(folder_path, file_name)
-                                
-                                try:
-                                    if dist_name == 'Horizon':
-                                        df = pd.read_excel(file_path) if file_name.endswith(('.xlsx', '.xls')) else pd.read_csv(file_path)
-                                        df = clean_horizon_data(df)
-                                    elif dist_name == 'PSC':
-                                        df = merge_psc_sheets(file_path)
-                                    elif dist_name == 'Ollie':
-                                        df = pd.read_excel(file_path) if file_name.endswith(('.xlsx', '.xls')) else pd.read_csv(file_path)
-                                        df = clean_ollie_data(df)
-                                    
-                                    if not df.empty:
-                                        all_data.append(df)
-                                        processed_files.append(f"{dist_name}: {file_name}")
-                                        st.session_state.last_processed_files.add(file_name)
-                                        
-                                except Exception as e:
-                                    st.warning(f"Error processing {file_name}: {e}")
                 
                 # Add Shopify data
                 shopify_df = fetch_shopify_orders()
