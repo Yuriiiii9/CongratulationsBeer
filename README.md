@@ -9,6 +9,22 @@ The platform includes:
 
 ---
 
+## 📋 Table of Contents
+- [Description](#description)
+- [Tech Assets & URLs](#tech-assets--urls)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Features](#features)
+- [Data Sources](#data-sources)
+- [Output Files](#output-files)
+- [Credentials](#credentials)
+- [Troubleshooting](#troubleshooting)
+- [Costs Involved](#costs-involved)
+- [Contact](#contact)
+- [License](#license)
+
+---
+
 ## 🚀 Key Features
 
 - ✅ **Automated File Cleaning & Merging** across three channels
@@ -78,6 +94,81 @@ All files are automatically uploaded to shared Google Drive folders for recordke
 - 🚫 Flags failed uploads or incorrect file formats
 - 🧹 Automatically deletes temporary files after upload
 - 🔐 Credentials and API keys are managed securely in deployment
+
+---
+
+## 🛠️ Installation
+
+**No installation is required for end users.**
+The platform is fully web-based. Simply visit the link below and log in:
+
+👉 [https://nonny-beer-web.onrender.com/](https://nonny-beer-web.onrender.com/)
+
+For developers or technical team members who wish to run the app locally, see below.
+
+### Local Setup (Optional – Developer Use Only)
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/your-org/nonnybeer-handoff.git
+   cd nonnybeer-handoff
+   ```
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the Streamlit app:
+
+   ```bash
+   streamlit run streamlit_app.py
+   ```
+
+---
+
+## 📋 Prerequisites
+
+> ⚠️ **This section applies only if you are running the app locally.**
+> Most users **do not need to install anything** to access the platform via the website.
+
+* **Python 3.8+** for local development
+* Required libraries in `requirements.txt` (e.g., Streamlit, pandas)
+* Active **Google Service Account credentials** (included in `secret.zip`)
+
+  * If access to shared folders is removed, data fetching will stop
+  * Contact the project team to update service account settings
+* API keys for:
+
+  * **Shopify** (order data)
+  * **Groq** (AI assistant)
+    These are already pre-configured for production use
+
+---
+
+## 🧯 Troubleshooting
+
+* **Format-related errors:**
+  Most code-level issues (e.g., column mismatch, sheet name errors) will display a clear error message. These usually result from **new data sources that differ from expected templates**. Please contact the team for format alignment.
+
+* **Render page errors (502 / 504 / 501):**
+  These are transient and usually indicate the server is re-deploying. Wait 30–60 seconds and refresh the page.
+
+* **Black screen or spinning Render logo:**
+  This means the web app is still booting. Please wait — no action needed.
+
+* **Drive access issues:**
+  If the shared Google Drive folders are not visible or files do not load, ensure that the **current service account still has access**.
+
+---
+
+## 💸 Costs Involved
+
+* **Power BI Pro:**
+  The embedded dashboard uses a **Power BI Pro trial**. If the trial expires, some visual elements (e.g., Map visuals) may become unavailable.
+  However, this **does not affect core data access or platform functionality**.
+
+* We recommend the client obtain a **Power BI Pro license** for long-term access and seamless dashboard performance.
 
 ---
 ### 🔐 Credentials (Secure Delivery)
