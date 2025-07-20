@@ -55,13 +55,6 @@ nonnybeer-handoff/
 ├── data_processing.py            # File parsing, cleaning, Drive upload
 ├── requirements.txt              # Python dependencies
 ├── secret.zip                    # Encrypted credentials (password shared privately with client)
-│
-├── assets/                       # App screenshots and visuals
-│   └── powerbi_dashboard.png
-│
-├── outputs/                      # Sample output files
-│   └── combined_sales_data_sample.csv
-│
 └── README.md                     # This file
 ```
 
