@@ -173,8 +173,8 @@ For developers or technical team members who wish to run the app locally, see be
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/your-org/nonnybeer-handoff.git
-   cd nonnybeer-handoff
+   git clone https://github.com/Yuriiiii9/CongratulationsBeer.git
+   cd CongratulationsBeer
    ```
 2. Install dependencies:
 
