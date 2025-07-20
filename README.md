@@ -54,7 +54,7 @@ nonnybeer-handoff/
 ├── streamlit_app.py              # Main Streamlit app (UI + logic)
 ├── data_processing.py            # File parsing, cleaning, Drive upload
 ├── requirements.txt              # Python dependencies
-├── secret.zip                    # Encrypted credentials (password shared privately with client)
+├── Credentials.zip               # Encrypted credentials (password shared privately with client)
 └── README.md                     # This file
 ```
 
@@ -228,12 +228,12 @@ For developers or technical team members who wish to run the app locally, see be
 ---
 ### 🔐 Security & Credentials (Secure Delivery)
 
-- This repository includes an encrypted file: `secret.zip`
+- This repository includes an encrypted file: `Credentials.zip`
 - It contains necessary credentials such as:
   - Google Service Account JSON
   - API keys (e.g., Groq)
 - **The password is NOT shared in this repo.**  
-  It will be delivered **securely and privately** to the client (e.g., via email, Zoom, or in-person handoff).
+  It will be delivered **securely and privately** to the client (via email).
 - Do not attempt to open or extract the file without authorization.
 
 ⚠️ Reminder: Do not upload or share the contents of `secret.zip` in any public or private GitHub repository.
