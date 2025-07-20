@@ -1,8 +1,6 @@
-# CongratulationsBeer
-
 # 🍺 Nonny Beer Sales Data Platform
 
-This project delivers a fully automated pipeline to clean, merge, and visualize monthly distributor sales data for **Nonny Beer**. It integrates multiple data sources (HORIZON, PSC, and OLLIE), standardizes file formats, and outputs ready-to-use CSV files for business analysis.
+This project delivers a fully automated pipeline to clean, merge, and visualize monthly distributor sales data for **Nonny Beer**. It integrates multiple data sources (HORIZON, PSC, OLLIE and Shopify), standardizes file formats, and outputs ready-to-use CSV files for business analysis.
 
 The platform includes:
 - A **Streamlit Web App** for file preview, dashboard viewing, and AI-driven Q&A
@@ -38,17 +36,13 @@ nonnybeer-handoff/
 ├── outputs/                      # Sample output files
 │   └── combined_sales_data_sample.csv
 │
-├── deployment/
-│   ├── render_deploy_guide.md   # Step-by-step Render deployment
-│   └── powerbi_embed_guide.md   # Power BI embedding + refresh guide
-│
 └── README.md                     # This file
 ```
 
 ## 🌐 How to Use the Platform
 
 Access the web app here:  
-👉 **([https://your-app-url.streamlit.app/](https://nonny-beer-web.onrender.com/))**
+👉 **([https://nonny-beer-web.onrender.com/](https://nonny-beer-web.onrender.com/))**
 
 ### Inside the App:
 
