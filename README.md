@@ -5,34 +5,44 @@ This project delivers a fully automated pipeline to clean, merge, and visualize 
 The platform includes:
 - A **Streamlit Web App** for file preview, dashboard viewing, and AI-driven Q&A
 - A **Power BI Dashboard** for sales trends and customer activity
-- **Auto-upload to Google Drive** with versioned outputs
+- **One-click data collection, cleaning, merging, and dashboard visualization plus analysis**
 
 ---
 
 ## 📋 Table of Contents
-- [Description](#description)
+- [Description](#project-description)
+- [Key Features](#key-features)
+- [Repository Structure](#repository-structure)
 - [Tech Assets & URLs](#tech-assets--urls)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Features](#features)
+- [Usage](#how-to-use-the-platform)
 - [Data Sources](#data-sources)
 - [Output Files](#output-files)
-- [Credentials](#credentials)
+- [Smart Features](#smart-features)
+- [Installation](#installation)
+- [Prerequisites](#prerequisites)
 - [Troubleshooting](#troubleshooting)
 - [Costs Involved](#costs-involved)
+- [Security & Credentials (Secure Delivery)](#security--credentials-secure-delivery)
 - [Contact](#contact)
 - [License](#license)
 
 ---
+
+## 📄 Project Description
+
+This project provides an end-to-end web-based solution for Nonny Beer to collect, clean, merge, and analyze sales data from multiple distributors.  
+It enables real-time dashboard visualization, account activity tracking, and AI-powered querying — all accessible through a no-code, secure interface.
+
 
 ## 🚀 Key Features
 
 - ✅ **Automated File Cleaning & Merging** across three channels
 - ☁️ **Google Drive Upload**: versioned `.csv` exports auto-uploaded to shared folders
 - 📊 **Embedded Power BI Dashboard** for visual insights
+- 📈 **Analytics Transparency**: delivers auto-refreshed, structured insights that highlight account trends, product performance, and sales by channel — all without manual reporting.
 - 🤖 **AI Assistant (Groq + LangChain)** to ask natural-language questions like  
   > *“Which accounts were inactive in the last quarter?”*
-- 📁 **Duplicate & Error Handling**: skips already-processed or failed files with feedback
+- 📁 **Download Traceability**: displays the last generated file name for each export, enabling easy version tracking
 
 ---
 
@@ -55,6 +65,9 @@ nonnybeer-handoff/
 └── README.md                     # This file
 ```
 
+## 🔗 Tech Assets & URLs
+[https://nonny-beer-web.onrender.com/](https://nonny-beer-web.onrender.com/)
+
 ## 🌐 How to Use the Platform
 
 Access the web app here:  
@@ -62,20 +75,68 @@ Access the web app here:
 
 ### Inside the App:
 
-- **Tab 1: Preview**
-  - Filter by channel, product, province
-  - Download processed CSV files
-- **Tab 2: Dashboard**
-  - Explore sales trends, customer activity, top products
-  - Powered by Power BI (embedded)
-- **Tab 3: AI Assistant**
-  - Ask questions like:  
-    > “Which PSC accounts had no orders in June?”  
-    > “Top 5 products by revenue in the last 3 months”
+### 🧭 Data Management Console
+
+- One-click process to trigger full pipeline  
+- Upload raw CSV or Excel files manually  
+- Monitor Shopify & Google Drive API connection  
+- View processed file count and record summaries  
+- Clear history or reprocess with ease  
 
 ---
 
-## 📁 Output Files (Auto-Uploaded to Google Drive)
+### 📊 Tab 1: Business Dashboard
+
+- View total sales, orders, bottles, and unique accounts  
+- Visualize account status by activity segment  
+- Display recent file processing summary  
+- Embedded Power BI dashboard for deep drill-down  
+- Auto-refresh with each processing run  
+
+---
+
+### 📈 Tab 2: Analytics
+
+- Plot monthly sales trends  
+- Compare product lines by revenue and volume  
+- Analyze channel-level performance  
+- Understand product and customer dynamics  
+- Identify patterns, gaps, and growth points  
+
+---
+
+### 🤖 Tab 3: AI Assistant
+
+- Ask natural-language business questions  
+- Retrieve insights across sales, products, and accounts  
+- Powered by Groq + LangChain  
+- No SQL or dashboard filters required  
+- Available instantly after processing  
+
+---
+
+### 📁 Tab 4: Data Preview
+
+- Filter data by channel, product, or province  
+- Review cleaned and merged outputs  
+- Download ready-to-use CSVs  
+- Validate source formatting and quantity  
+- Great for cross-checking or light analysis  
+
+---
+
+### 📚 Tab 5: Resource Center
+
+- View documentation, user guides, and links  
+- Check data format requirements for each source  
+- Access required environment variables  
+- Contact support or submit issues  
+- Central hub for technical and business users  
+
+
+---
+
+## 📁 Output Files
 
 Each run generates versioned `.csv` files:
 
@@ -84,15 +145,16 @@ Each run generates versioned `.csv` files:
 | `combined_sales_data_<timestamp>.csv` | Cleaned and merged full dataset |
 | `account_status_<timestamp>.csv`     | Customer activity status by last order date |
 
-All files are automatically uploaded to shared Google Drive folders for recordkeeping and reuse.
+All files can be previewed, downloaded, and visualized in real time via the web dashboard.
 
 ---
 
 ## 🧠 Smart Features
 
-- 🔁 Skips already-processed files to prevent duplicates
-- 🚫 Flags failed uploads or incorrect file formats
-- 🧹 Automatically deletes temporary files after upload
+- 🧠 One-click data collection, cleaning, merging, and visualization  
+- 📂 Real-time preview and download with export traceability  
+- ⚠️ Automatic format validation with instant error prompts  
+- 📊 Embedded dashboards with interactive multi-dimensional filtering 
 - 🔐 Credentials and API keys are managed securely in deployment
 
 ---
@@ -171,7 +233,7 @@ For developers or technical team members who wish to run the app locally, see be
 * We recommend the client obtain a **Power BI Pro license** for long-term access and seamless dashboard performance.
 
 ---
-### 🔐 Credentials (Secure Delivery)
+### 🔐 Security & Credentials (Secure Delivery)
 
 - This repository includes an encrypted file: `secret.zip`
 - It contains necessary credentials such as:
@@ -196,5 +258,3 @@ For developers or technical team members who wish to run the app locally, see be
 
 MIT License — for academic demonstration use. Client-facing license terms to be discussed separately.
 ```
-
----
